@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國際莊園社區管理委員會提案填寫系統</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .section:nth-child(2) { animation-delay: 0.2s; }
+        .section:nth-child(3) { animation-delay: 0.4s; }
+        .section:nth-child(4) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: #e74c3c;
+            transition: width 0.3s ease;
+        }
+
+        .section:hover .section-title::after {
+            width: 100px;
+        }
+
+        .proposal-item {
+            background: white;
+            border: 2px solid #ecf0f1;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .proposal-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(52, 152, 219, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .proposal-item:hover {
+            border-color: #3498db;
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .proposal-item:hover::before {
+            left: 100%;
+        }
+
+        .proposal-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            margin-top: 3px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+            position: absolute;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom {
+            background: #3498db;
+            border-color: #3498db;
+            transform: scale(1.1);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked + .checkbox-custom::after {
+            content: '✓';
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            animation: checkmark 0.3s ease;
+        }
+
+        @keyframes checkmark {
+            from {
+                opacity: 0;
+                transform: scale(0);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .proposal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            flex: 1;
+        }
+
+        .proposal-description {
+            margin-left: 35px;
+            color: #5d6d7e;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .proposal-description ol {
+            padding-left: 0;
+            margin: 0;
+            list-style: none;
+            counter-reset: proposal-counter;
+        }
+
+        .proposal-description li {
+            counter-increment: proposal-counter;
+            margin-bottom: 8px;
+            padding-left: 0;
+            position: relative;
+        }
+
+        .proposal-description li::before {
+            content: counter(proposal-counter) ".";
+            font-weight: bold;
+            color: #3498db;
+            margin-right: 8px;
+            min-width: 20px;
+            display: inline-block;
+        }
+
+        .add-proposal {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .add-proposal:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+        }
+
+        .custom-proposal {
+            background: #f8f9fa;
+            border: 2px dashed #3498db;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 15px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                max-height: 200px;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .signature-section {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .signature-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            placeholder-color: rgba(255, 255, 255, 0.7);
+        }
+
+        .signature-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .generate-pdf {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .generate-pdf:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(231, 76, 60, 0.4);
+        }
+
+        .generate-pdf:active {
+            transform: translateY(0);
+        }
+
+        .remove-proposal {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-proposal:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .signature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>國際莊園管理委員會提案填寫系統</h1>
+            <p>請選擇您同意的提案項目，或自訂提案，並完成簽署</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2 class="section-title">📋 提案項目清單</h2>
+                <div id="proposalsList">
+                    <!-- 預設提案項目 -->
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal1">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">地下室漏水修繕與保固</div>
+                        </div>
+                        <div class="proposal-description">
+                            1.因本社區於交屋初期即發生漏水情況，要求建商代表列席管委會，進行現況與調查原因說明。
+                            2.建商應提出短/中/長期修繕計畫讓住戶了解。
+                            3.保固計算起始日：待修繕完成後經豪雨測試、第三方公正單位驗收無虞，方可啟動保固。漏水保固年限延長至與結構相同十五年，並以書面形式正式確認。
+                            4.建商每年主動檢查地下室漏水及結構安全情形，並出具報告提供給管委會。
+                            5.建商應每月公告:地下室是否有新漏水情形、漏水修繕進度。雨季期間應調整為每週公告。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal2">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">公設缺失追蹤</div>
+                        </div>
+                        <div class="proposal-description">
+                            1.所有公設缺失由建商與物業造冊公告，於每月管委會會議報告修繕進度。
+                            2.公設已點交，保固期僅一年，應由物業管理中心責成專人，與建商推派代表進行點交前既存缺失，並且建檔造冊（須能明確辨識位置、損壞程度、並且拍照佐證），待建商修繕後經由管理委員會或責成第三方單位驗收無虞後，方可作為保固起始日。（造冊資料，區權人保有查閱權限）
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal3">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">視聽室與兒童遊戲室方案承諾</div>
+                        </div>
+                        <div class="proposal-description">
+                            雖建商聲稱依合約可自行變更公設，然原合約載明應有視聽室與兒童遊戲室，即使一年後區權會決議維持現狀，建商仍應提供補償：
+                            1.補償金納入公積金。
+                            2.或添購/設置相關設備於原空間內。
+                            3.建議委員會應積極代表住戶向建商爭取應有權益，維護社區公共設施之完整與住戶權益之保障。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal4">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">物業相關問題</div>
+                        </div>
+                        <div class="proposal-description">
+                            1.說明物業工作職責及權責範圍，敬請明定並公告周知。 
+                            2.物業品質的改善，資深人員並無資深的服務。（包含訊息已讀不回、訊息不清楚、會議紀錄未詳實記載等） 
+                            3.雲端平台的設置，重要資訊公開方式。 
+                            4.物業與外包人力說明（至少含人數、班表、權責劃分、薪資結構） 
+                            5.住戶反映問題，應主動追蹤及回報。 
+                            6.物業遴選、更換、未確實執行業務時相關罰則（例如未盡通知義務）。 
+                            7.財務報表的製作及公開，應尊重管理規約規範，進行公告。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal5">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">車道與行人動線安全</div>
+                        </div>
+                        <div class="proposal-description">
+                            1.地下車道需明確劃設行車線與車位區隔。 
+                            2.梯廳至車道間行人警示需清晰明顯，避免車禍風險。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal6">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">公設空間與設備完善</div>
+                        </div>
+                        <div class="proposal-description">
+                            1.家庭娛樂室設備貧乏，建商應補足如：電玩、音響、桌遊等。 
+                            2.健身房跑步機不足，應至少增設一台；重訓區需大面鏡子。 
+                            3.家教室應補設護眼檯燈與電子白板等教學設備。 
+                            4.為利本案後續推動，敬請委員會協助明確說明建商之設計規劃內容，並釐清其相關費用由誰負擔。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal7">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">泳池隱私問題</div>
+                        </div>
+                        <div class="proposal-description">
+                            露天泳池易被透天住戶看見，建商於2月承諾改善，至今無進度，請委員會要求建商指派代表，於七月份管理委員會開會時，進行改善方案及改善進度說明。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal8">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">會議發言身份說明</div>
+                        </div>
+                        <div class="proposal-description">
+                            所有與會人員發言前應說明身份（建商/物業/委員），避免混淆與誤解。例如：物業曾擅自承諾 5+5+5+5 年防水保固，與建商實際承諾不符。
+                        </div>
+                    </div>
+
+                    <div class="proposal-item">
+                        <div class="proposal-header">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" id="proposal9">
+                                <div class="checkbox-custom"></div>
+                            </div>
+                            <div class="proposal-title">會議代表(會議參與)與表決合法性</div>
+                        </div>
+                        <div class="proposal-description">
+                            根據《寶輝國際莊園住宅及生活廣場規約(組織報備版)》 
+                            1.區分所有權人會議： 
+                              - 配偶可以代理出席，須具備書面委託書，依據規約第六條及第七條規定。 
+                            2.管理委員會會議： 
+                              - 配偶不得代理出席。 
+                              - 僅限其他管理委員可書面代理，依據第十四條第 5 項規定。
+                            3.管委會會議應於會議日期前七日公告，且不應限制住戶參與。 
+                            4.請將會議安排於住戶較易參與之非上班時段。 
+                            5.委員會應重視遵守規約及出席資格，以確保會議結果的公正性與有效性。
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                <button class="add-proposal" onclick="addCustomProposal()">
+                    ➕ 新增自訂提案
+                </button>
+            </div>
+
+            <div class="section signature-section">
+                <h2 class="section-title" style="color: white; border-bottom-color: rgba(255,255,255,0.3);">✍️ 簽署資訊</h2>
+                <div class="signature-grid">
+                    <div class="form-group">
+                        <label class="form-label">住戶姓名</label>
+                        <input type="text" id="residentName" class="form-input signature-input" placeholder="請輸入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">戶號</label>
+                        <input type="text" id="unitNumber" class="form-input signature-input" placeholder="請輸入戶號（如：A棟12樓3號）">
+                    </div>
+                </div>
+                
+                <button class="generate-pdf" onclick="generatePDF()">
+                    📄 生成PDF提案單
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let customProposalCount = 0;
+
+        function addCustomProposal() {
+            customProposalCount++;
+            const proposalId = `custom${customProposalCount}`;
+            
+            const customProposalHTML = `
+                <div class="custom-proposal" id="customProposal${customProposalCount}">
+                    <div class="form-group">
+                        <label class="form-label">提案主旨</label>
+                        <input type="text" id="${proposalId}Title" class="form-input" placeholder="請輸入提案主旨">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">詳細說明</label>
+                        <textarea id="${proposalId}Description" class="form-textarea" placeholder="請詳細說明提案內容、理由及預期效益"></textarea>
+                    </div>
+                    <button class="remove-proposal" onclick="removeCustomProposal(${customProposalCount})">
+                        🗑️ 移除此提案
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('proposalsList').insertAdjacentHTML('beforeend', customProposalHTML);
+        }
+
+        function removeCustomProposal(id) {
+            const proposalElement = document.getElementById(`customProposal${id}`);
+            proposalElement.style.animation = 'slideUp 0.3s ease-out reverse';
+            setTimeout(() => {
+                proposalElement.remove();
+            }, 300);
+        }
+
+        async function generatePDF() {
+            const residentName = document.getElementById('residentName').value;
+            const unitNumber = document.getElementById('unitNumber').value;
+            
+            if (!residentName || !unitNumber) {
+                alert('請填寫完整的姓名和戶號資訊');
+                return;
+            }
+
+            // 創建一個隱藏的PDF內容容器
+            const pdfContent = createPDFContent(residentName, unitNumber);
+            document.body.appendChild(pdfContent);
+
+            try {
+                // 使用html2canvas將HTML轉換為圖片，再轉為PDF
+                const canvas = await html2canvas(pdfContent, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                });
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210; // A4 寬度
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // 第一頁
+                doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= 297; // A4 高度
+
+                // 如果內容超過一頁，添加新頁面
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    doc.addPage();
+                    doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= 297;
+                }
+
+                // 移除臨時容器
+                document.body.removeChild(pdfContent);
+                
+                // 下載PDF
+                doc.save(`社區提案單_${residentName}_${unitNumber}_${new Date().toISOString().slice(0,10)}.pdf`);
+                
+            } catch (error) {
+                console.error('PDF生成失敗:', error);
+                alert('PDF生成失敗，請重試');
+                document.body.removeChild(pdfContent);
+            }
+        }
+
+        function createPDFContent(residentName, unitNumber) {
+            const container = document.createElement('div');
+            container.style.cssText = `
+                position: fixed;
+                top: -9999px;
+                left: -9999px;
+                width: 800px;
+                padding: 40px;
+                background: white;
+                font-family: 'Microsoft JhengHei', Arial, sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+                color: #333;
+            `;
+
+            let proposalNumber = 1;
+            let agregedProposals = '';
+
+            // 收集已勾選的原有提案
+            for (let i = 1; i <= 12; i++) {
+                const checkbox = document.getElementById(`proposal${i}`);
+                if (checkbox && checkbox.checked) {
+                    const proposalItem = checkbox.closest('.proposal-item');
+                    const title = proposalItem.querySelector('.proposal-title').textContent;
+                    const description = proposalItem.querySelector('.proposal-description').textContent;
+                    
+                    agregedProposals += `
+                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                            <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">
+                                ${proposalNumber}. ${title}
+                            </div>
+                            <div style="margin-left: 20px; color: #5d6d7e; text-align: justify;">
+                                ${description}
+                            </div>
+                        </div>
+                    `;
+                    proposalNumber++;
+                }
+            }
+
+            // 收集自訂提案
+            for (let i = 1; i <= customProposalCount; i++) {
+                const titleElement = document.getElementById(`custom${i}Title`);
+                const descElement = document.getElementById(`custom${i}Description`);
+                
+                if (titleElement && descElement && titleElement.value && descElement.value) {
+                    agregedProposals += `
+                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                            <div style="font-weight: bold; margin-bottom: 8px; color: #2c3e50;">
+                                ${proposalNumber}. ${titleElement.value}
+                            </div>
+                            <div style="margin-left: 20px; color: #5d6d7e; text-align: justify;">
+                                ${descElement.value}
+                            </div>
+                        </div>
+                    `;
+                    proposalNumber++;
+                }
+            }
+
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #3498db; padding-bottom: 20px;">
+                    <h1 style="font-size: 24px; color: #2c3e50; margin-bottom: 10px;">社區管理委員會提案單</h1>
+                    <p style="color: #7f8c8d; font-size: 16px;">Community Management Committee Proposal Form</p>
+                </div>
+
+                <div style="margin-bottom: 30px; background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">住戶資訊 Resident Information</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div><strong>住戶姓名 Name:</strong> ${residentName}</div>
+                        <div><strong>戶號 Unit:</strong> ${unitNumber}</div>
+                    </div>
+                    <div style="margin-top: 15px;"><strong>填寫日期 Date:</strong> ${new Date().toLocaleDateString('zh-TW')}</div>
+                </div>
+
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #e74c3c; padding-bottom: 5px;">同意提案 Agreed Proposals</h3>
+                    ${agregedProposals || '<p style="color: #7f8c8d; font-style: italic;">尚未選擇任何提案 No proposals selected</p>'}
+                </div>
+
+                <div style="margin-top: 50px; border-top: 2px solid #bdc3c7; padding-top: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>住戶簽名 Resident Signature:</strong>
+                            <div style="border-bottom: 2px solid #333; width: 200px; margin-top: 20px; height: 2px;"></div>
+                        </div>
+                        <div style="text-align: right; color: #7f8c8d;">
+                            <div>此提案單已於 ${new Date().toLocaleDateString('zh-TW')} 生成</div>
+                            <div style="font-size: 12px; margin-top: 5px;">Generated on ${new Date().toLocaleDateString('en-US')}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return container;
+        }
+
+        // 頁面載入動畫
+        window.addEventListener('load', function() {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
